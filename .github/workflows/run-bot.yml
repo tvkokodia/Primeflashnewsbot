@@ -1,1 +1,39 @@
+name: Run Naija News Bot
 
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  post-news:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install what the bot needs
+        run: pip install -r requirements.txt
+
+      - name: Run the bot
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+        run: python bot.py
+
+      - name: Save the bot's memory so it doesn't repeat stories
+        run: |
+          git config user.name "Naija News Bot"
+          git config user.email "bot@example.com"
+          git add posted.json
+          git diff --quiet --cached || git commit -m "update posted stories memory"
+          git push
